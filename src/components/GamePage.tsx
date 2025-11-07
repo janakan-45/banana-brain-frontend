@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import Spline from '@splinetool/react-spline';
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -382,13 +381,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   // ... rest of the JSX remains the same
   return (
     <div className="min-h-screen p-4 py-8 relative overflow-hidden">
-      {/* Spline 3D Background */}
-      <div className="absolute inset-0 z-0">
-        <Spline
-          scene="https://prod.spline.design/7ZYOzEfwSvnirm1x/scene.splinecode"
-          className="w-full h-full object-cover"
-        />
-      </div>
 
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
