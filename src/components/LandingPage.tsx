@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Gamepad2, LogIn, Sparkles, Trophy, UserPlus, Zap } from "lucide-react";
 
@@ -18,11 +18,6 @@ const orbitAnimations = [
   { duration: 38, delay: 8 },
 ];
 
-interface PuzzlePreview {
-  question: string;
-  solution: number;
-}
-
 const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
@@ -31,10 +26,6 @@ const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
   const rotateY = useTransform(pointerX, [-160, 160], [-16, 16]);
   const glowX = useTransform(pointerX, [-160, 160], ["30%", "70%"]);
   const glowY = useTransform(pointerY, [-160, 160], ["30%", "70%"]);
-
-  const [puzzlePreview, setPuzzlePreview] = useState<PuzzlePreview | null>(null);
-  const [isLoadingPuzzle, setIsLoadingPuzzle] = useState(true);
-  const [puzzleError, setPuzzleError] = useState<string | null>(null);
 
   const floatingEmojis = useMemo(
     () => ["🍌", "🥥", "🌴", "🎮", "🪄", "⚡", "💥", "🛸"].sort(() => 0.5 - Math.random()).slice(0, 6),
@@ -53,48 +44,6 @@ const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
     pointerX.set(0);
     pointerY.set(0);
   };
-
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-
-    const fetchPuzzlePreview = async () => {
-      try {
-        setIsLoadingPuzzle(true);
-        const response = await fetch("https://marcconrad.com/uob/banana/api.php", {
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`API responded with status ${response.status}`);
-        }
-
-        const data = (await response.json()) as PuzzlePreview;
-        if (isMounted) {
-          setPuzzlePreview(data);
-          setPuzzleError(null);
-        }
-      } catch (error) {
-        if (isMounted && !(error instanceof DOMException && error.name === "AbortError")) {
-          setPuzzleError("Unable to reach the Banana API preview right now. Please try again shortly.");
-          setPuzzlePreview(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingPuzzle(false);
-        }
-      }
-    };
-
-    void fetchPuzzlePreview();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, []);
-
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-[#fff7d4] via-[#ffe29f] to-[#ffc14f]">
       <div className="absolute inset-0">
@@ -295,47 +244,6 @@ const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
                   </div>
                 </div>
               </div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
-                className="rounded-3xl border border-yellow-200/50 bg-white/75 p-6 text-left text-[#5b3f00] shadow-inner shadow-white/40 backdrop-blur-xl"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b07900]/70">Live Puzzle Feed</span>
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                </div>
-                <p className="mt-2 text-sm text-[#6f4d00]/80">
-                  Streaming directly from <span className="font-semibold text-[#3b2a00]">marcconrad.com/uob/banana/api.php</span>
-                </p>
-                <div className="mt-4 overflow-hidden rounded-2xl border border-yellow-200/60 bg-white/90 shadow-lg shadow-amber-500/20">
-                  {puzzlePreview && !puzzleError ? (
-                    <motion.div
-                      key={puzzlePreview.question}
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="space-y-3 p-4"
-                    >
-                      <motion.img
-                        src={puzzlePreview.question}
-                        alt="Current Banana puzzle preview"
-                        className="mx-auto h-44 w-full max-w-md rounded-xl bg-gradient-to-br from-yellow-50 via-white to-amber-50 object-contain"
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                      <p className="text-xs text-[#7a4f00]/80">
-                        Crack the puzzle, lock in the answer, and the Banana backend validates your solution in real time.
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <div className="space-y-3 p-4 text-center text-sm text-[#7a4f00]/80">
-                      {isLoadingPuzzle ? "Fetching the freshest Banana puzzle…" : puzzleError}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
             </div>
           </motion.div>
         </motion.div>
