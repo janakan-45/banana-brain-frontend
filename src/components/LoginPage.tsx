@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
   Gamepad2,
   Trophy,
   KeyRound,
+  ArrowLeft,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -34,9 +35,12 @@ import Particles from "@tsparticles/react";
 
 interface LoginPageProps {
   onLogin: (username: string) => void;
+  initialTab?: "login" | "register";
+  onBack?: () => void;
 }
 
 const apiBaseUrl = import.meta.env.VITE_BASE_API;
+const puzzleApiUrl = "https://marcconrad.com/uob/banana/api.php";
 
 type RegisterField = "username" | "email" | "password" | "confirmPassword";
 
@@ -126,7 +130,7 @@ const scoreboardTeasers = [
   },
 ];
 
-const LoginPage = ({ onLogin }: LoginPageProps) => {
+const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) => {
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [registerData, setRegisterData] = useState<RegisterFormState>(initialRegisterState);
   const [registerErrors, setRegisterErrors] = useState<Record<RegisterField, string>>(initialRegisterErrors);
@@ -141,7 +145,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"login" | "register">(initialTab);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const showDialog = (tone: DialogTone, title: string, description: string) => {
     setDialogState({ open: true, tone, title, description });
@@ -362,6 +371,17 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff5dc] via-[#ffe3bf] to-[#ffcaa0]">
+      {onBack && (
+        <motion.button
+          type="button"
+          onClick={onBack}
+          whileHover={{ x: -4 }}
+          className="group absolute left-6 top-6 z-20 flex items-center gap-2 rounded-full border border-white/30 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg backdrop-blur-lg transition-all hover:bg-white"
+        >
+          <ArrowLeft className="h-4 w-4 text-yellow-500 transition-transform group-hover:-translate-x-1" />
+          Back
+        </motion.button>
+      )}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute -top-10 left-1/3 h-40 w-40 rounded-full bg-gradient-to-br from-yellow-300/40 via-orange-300/30 to-pink-300/30 blur-2xl"
@@ -546,7 +566,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-600"
               >
                 <Trophy className="h-3 w-3 text-amber-500" />
-                New tournament starts in 02:17:49
+                Puzzle feed refreshes every 60 seconds
               </motion.span>
             </motion.div>
           </motion.div>
@@ -566,7 +586,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               <div className="relative p-8 sm:p-10">
                 <div className="mb-8 flex flex-col items-center text-center">
                   <Badge className="mb-4 rounded-full border border-yellow-300/80 bg-yellow-100/90 px-5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-yellow-700 shadow-sm">
-                    Ready Player
+                    Verified Banana Feed
                   </Badge>
                   <motion.div
                     className="text-7xl sm:text-8xl"
@@ -575,10 +595,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   >
                     🍌
                   </motion.div>
-                  <h1 className="mt-4 text-3xl font-black text-gray-900 sm:text-4xl">Banana Brain Blitz</h1>
-                  <p className="mt-2 text-sm text-gray-600">Sign in or squad up to join today's high-score dash.</p>
+                  <h1 className="mt-4 text-3xl font-black text-gray-900 sm:text-4xl">Banana Brain Puzzle Hub</h1>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Sync your account to submit solutions from the official University of Bahrain Banana API feed.
+                  </p>
                 </div>
-                <Tabs defaultValue="login" className="space-y-8">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(value) => setActiveTab(value as "login" | "register")}
+                  className="space-y-8"
+                >
                   <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-gradient-to-r from-yellow-100 via-white to-yellow-100 p-1 shadow-inner shadow-yellow-500/20">
                     <TabsTrigger
                       value="login"
@@ -961,6 +987,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                     Powered by the Banana API leaderboard
                   </p>
                   <p className="text-[0.65rem] text-gray-500">Backend endpoint: {apiBaseUrl}</p>
+                  <p className="text-[0.65rem] text-gray-500">Puzzle feed: {puzzleApiUrl}</p>
                 </motion.div>
               </div>
             </Card>

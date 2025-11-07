@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import LandingPage from "@/components/LandingPage";
 import LoginPage from "@/components/LoginPage";
 import GamePage from "@/components/GamePage";
 import Leaderboard from "@/components/Leaderboard";
 
-type GameState = "login" | "playing" | "leaderboard";
+type ViewState = "landing" | "auth" | "playing" | "leaderboard";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<GameState>("login");
+  const [view, setView] = useState<ViewState>("landing");
+  const [authTab, setAuthTab] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [finalScore, setFinalScore] = useState(0);
 
@@ -15,7 +17,7 @@ const Index = () => {
     const storedUser = localStorage.getItem("banana-user");
     if (storedUser) {
       setUsername(storedUser);
-      // Auto-login if user exists, but start at login screen
+      // Auto-login if user exists, but start at landing screen
       // User can choose to continue or change username
     }
   }, []);
@@ -23,35 +25,41 @@ const Index = () => {
   const handleLogin = (user: string) => {
     setUsername(user);
     localStorage.setItem("banana-user", user);
-    setGameState("playing");
+    setView("playing");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("banana-user");
     setUsername("");
-    setGameState("login");
+    setView("landing");
   };
 
   const handleGameComplete = (score: number) => {
     setFinalScore(score);
-    setGameState("leaderboard");
+    setView("leaderboard");
   };
 
   const handlePlayAgain = () => {
-    setGameState("playing");
+    setView("playing");
+  };
+
+  const handleSelectAuth = (mode: "login" | "register") => {
+    setAuthTab(mode);
+    setView("auth");
   };
 
   return (
     <>
-      {gameState === "login" && <LoginPage onLogin={handleLogin} />}
-      {gameState === "playing" && (
+      {view === "landing" && <LandingPage onSelectAuth={handleSelectAuth} />}
+      {view === "auth" && <LoginPage onLogin={handleLogin} initialTab={authTab} onBack={() => setView("landing")} />}
+      {view === "playing" && (
         <GamePage
           username={username}
           onLogout={handleLogout}
           onGameComplete={handleGameComplete}
         />
       )}
-      {gameState === "leaderboard" && (
+      {view === "leaderboard" && (
         <Leaderboard
           currentScore={finalScore}
           username={username}
