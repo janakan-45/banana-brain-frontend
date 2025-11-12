@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +42,7 @@ interface LoginPageProps {
 
 const apiBaseUrl = import.meta.env.VITE_BASE_API;
 const puzzleApiUrl = "https://marcconrad.com/uob/banana/api.php";
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type RegisterField = "username" | "email" | "password" | "confirmPassword";
 
@@ -143,7 +145,13 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
       tone: "info",
     },
   );
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [otpRequestLoading, setOtpRequestLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState<"password" | "otp">("password");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"login" | "register">(initialTab);
   const { toast } = useToast();
@@ -151,6 +159,14 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  useEffect(() => {
+    if (loginMode === "password") {
+      setOtpEmail("");
+      setOtpCode("");
+      setOtpSent(false);
+    }
+  }, [loginMode]);
 
   const showDialog = (tone: DialogTone, title: string, description: string) => {
     setDialogState({ open: true, tone, title, description });
@@ -167,7 +183,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
         return "";
       case "email":
         if (!trimmed) return "Email is required.";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Please enter a valid email address.";
+        if (!emailPattern.test(trimmed)) return "Please enter a valid email address.";
         return "";
       case "password":
         if (!value) return "Password is required.";
@@ -256,13 +272,16 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
   };
 
   const registerHasBlockingErrors = Object.values(registerErrors).some(Boolean);
-  const isLoginDisabled = isLoading || !loginData.username.trim() || !loginData.password.trim();
+  const isPasswordLoginDisabled = loginLoading || !loginData.username.trim() || !loginData.password.trim();
+  const trimmedOtpEmail = otpEmail.trim();
+  const isOtpEmailValid = Boolean(trimmedOtpEmail) && emailPattern.test(trimmedOtpEmail);
+  const isOtpRequestDisabled = otpRequestLoading || !isOtpEmailValid;
+  const isOtpVerifyDisabled = loginLoading || !otpSent || otpCode.length < 6 || !isOtpEmailValid;
   const { gradient, titleClass } = dialogToneStyles[dialogState.tone];
   const DialogIcon = dialogState.tone === "success" ? Sparkles : AlertCircle;
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handlePasswordLogin = async () => {
+    if (loginLoading) return;
 
     if (!loginData.username || !loginData.password) {
       toast({
@@ -270,9 +289,10 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
         description: "Please fill in all fields",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
+
+    setLoginLoading(true);
 
     try {
       const response = await fetch(`${apiBaseUrl}/banana/login/`, {
@@ -306,13 +326,151 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoginLoading(false);
     }
+  };
+
+  const handleRequestOtp = async () => {
+    if (otpRequestLoading) return;
+
+    if (!isOtpEmailValid) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email before requesting an OTP.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setOtpSent(false);
+    setOtpRequestLoading(true);
+    try {
+      const response = await fetch(`${apiBaseUrl}/banana/login/request-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedOtpEmail }),
+      });
+
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (response.ok) {
+        setOtpSent(true);
+        setOtpCode("");
+        toast({
+          title: "OTP sent",
+          description: `We've sent a one-time code to ${trimmedOtpEmail}.`,
+          className: "bg-gradient-to-r from-green-400 to-green-600 text-white",
+        });
+      } else {
+        const detail =
+          data?.detail ||
+          data?.message ||
+          (typeof data === "string" ? data : "Unable to request an OTP. Please try again.");
+        toast({
+          title: "Request failed",
+          description: detail,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("OTP request error:", error);
+      toast({
+        title: "Request error",
+        description: "Unable to reach the server. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setOtpRequestLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (loginLoading) return;
+
+    if (!isOtpEmailValid) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (otpCode.length < 6) {
+      toast({
+        title: "Incomplete OTP",
+        description: "Enter the 6-digit code sent to your email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoginLoading(true);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/banana/login/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedOtpEmail, otp: otpCode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data?.access && data?.refresh) {
+        localStorage.setItem("accessToken", data.access);
+        localStorage.setItem("refreshToken", data.refresh);
+        const username = data.username ?? data.user?.username ?? trimmedOtpEmail;
+        toast({
+          title: "🎉 Welcome back!",
+          description: `Logged in via email as ${username}`,
+          className: "bg-gradient-to-r from-green-400 to-green-600 text-white",
+        });
+        setOtpSent(false);
+        setOtpCode("");
+        onLogin(username);
+      } else {
+        const detail =
+          data?.detail ||
+          data?.message ||
+          (!data?.access || !data?.refresh ? "Login tokens were not returned by the server." : undefined) ||
+          "Invalid or expired OTP. Please request a new code.";
+        toast({
+          title: "Verification failed",
+          description: detail,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      toast({
+        title: "Verification error",
+        description: "Unable to connect to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (loginMode === "password") {
+      await handlePasswordLogin();
+      return;
+    }
+
+    await handleVerifyOtp();
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (registerLoading) return;
 
     const isValid = validateRegisterForm();
 
@@ -320,7 +478,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
       return;
     }
 
-    setIsLoading(true);
+    setRegisterLoading(true);
 
     try {
       const response = await fetch(`${apiBaseUrl}/banana/register/`, {
@@ -365,7 +523,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
         "• Unable to connect to the server. Please check if the backend server is running and try again.",
       );
     } finally {
-      setIsLoading(false);
+      setRegisterLoading(false);
     }
   };
 
@@ -624,107 +782,301 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                   <AnimatePresence mode="wait">
                     <TabsContent value="login" asChild>
                       <motion.form
-                        onSubmit={handleLogin}
+                        onSubmit={handleLoginSubmit}
                         className="space-y-6"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                          <label htmlFor="login-username" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <User className="h-4 w-4 text-yellow-500" />
-                            Username
-                          </label>
-                          <motion.div
-                            className="relative"
-                            animate={{
-                              boxShadow: focusedField === "login-username" ? "0 0 20px rgba(251,191,36,0.35)" : "0 0 0 rgba(0,0,0,0)",
-                            }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <Input
-                              id="login-username"
-                              type="text"
-                              placeholder="Enter username"
-                              value={loginData.username}
-                              onChange={(e) => setLoginData((prev) => ({ ...prev, username: e.target.value }))}
-                              onFocus={() => setFocusedField("login-username")}
-                              onBlur={() => setFocusedField(null)}
-                              className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
-                            />
-                            <motion.div
-                              className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-yellow-400"
-                              animate={{ x: loginData.username ? [0, 2, 0] : 0 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <User className="h-4 w-4" />
-                            </motion.div>
-                          </motion.div>
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                          <label htmlFor="login-password" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <KeyRound className="h-4 w-4 text-yellow-500" />
-                            Password
-                          </label>
-                          <motion.div
-                            className="relative"
-                            animate={{
-                              boxShadow: focusedField === "login-password" ? "0 0 20px rgba(251,191,36,0.35)" : "0 0 0 rgba(0,0,0,0)",
-                            }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <Input
-                              id="login-password"
-                              type="password"
-                              placeholder="••••••••"
-                              value={loginData.password}
-                              onChange={(e) => setLoginData((prev) => ({ ...prev, password: e.target.value }))}
-                              onFocus={() => setFocusedField("login-password")}
-                              onBlur={() => setFocusedField(null)}
-                              className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
-                            />
-                            <motion.div
-                              className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-yellow-400"
-                              animate={{ x: loginData.password ? [0, 2, 0] : 0 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <KeyRound className="h-4 w-4" />
-                            </motion.div>
-                          </motion.div>
-                        </motion.div>
                         <motion.div
-                          whileHover={{ scale: isLoginDisabled ? 1 : 1.02 }}
-                          whileTap={{ scale: isLoginDisabled ? 1 : 0.98 }}
-                          animate={{
-                            background: isLoading
-                              ? [
-                                  "linear-gradient(90deg, rgba(251,191,36,1) 0%, rgba(249,115,22,1) 50%, rgba(251,191,36,1) 100%)",
-                                  "linear-gradient(90deg, rgba(249,115,22,1) 0%, rgba(251,191,36,1) 50%, rgba(249,115,22,1) 100%)",
-                                ]
-                              : "linear-gradient(90deg, rgba(251,191,36,1), rgba(249,115,22,1))",
-                          }}
-                          transition={{ duration: 2, repeat: isLoading ? Infinity : 0 }}
+                          className="grid grid-cols-1 gap-2 rounded-2xl border border-yellow-200 bg-yellow-50/70 p-2 sm:grid-cols-2"
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
                         >
                           <Button
-                            type="submit"
-                            disabled={isLoginDisabled}
-                            className="h-12 w-full rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500 text-base font-semibold text-white shadow-lg shadow-orange-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-orange-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                            onClick={() => setLoginMode("password")}
+                            variant="ghost"
+                            className={`h-10 rounded-xl text-sm font-semibold transition-all ${
+                              loginMode === "password"
+                                ? "bg-white text-gray-900 shadow-md shadow-yellow-200"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
                           >
-                            {isLoading ? (
-                              <motion.span
-                                className="flex items-center justify-center gap-2"
-                                animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-                              >
-                                <Zap className="h-5 w-5" />
-                                Loading…
-                              </motion.span>
-                            ) : (
-                              <span className="flex items-center justify-center gap-2">Login &amp; Play</span>
-                            )}
+                            <span className="flex items-center justify-center gap-2">
+                              <KeyRound className="h-4 w-4 text-yellow-500" />
+                              Password Login
+                            </span>
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => setLoginMode("otp")}
+                            variant="ghost"
+                            className={`h-10 rounded-xl text-sm font-semibold transition-all ${
+                              loginMode === "otp"
+                                ? "bg-white text-gray-900 shadow-md shadow-yellow-200"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              <Mail className="h-4 w-4 text-yellow-500" />
+                              Email OTP Login
+                            </span>
                           </Button>
                         </motion.div>
+
+                        {loginMode === "password" ? (
+                          <>
+                            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                              <label htmlFor="login-username" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <User className="h-4 w-4 text-yellow-500" />
+                                Username
+                              </label>
+                              <motion.div
+                                className="relative"
+                                animate={{
+                                  boxShadow: focusedField === "login-username" ? "0 0 20px rgba(251,191,36,0.35)" : "0 0 0 rgba(0,0,0,0)",
+                                }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <Input
+                                  id="login-username"
+                                  type="text"
+                                  placeholder="Enter username"
+                                  value={loginData.username}
+                                  onChange={(e) => setLoginData((prev) => ({ ...prev, username: e.target.value }))}
+                                  onFocus={() => setFocusedField("login-username")}
+                                  onBlur={() => setFocusedField(null)}
+                                  className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
+                                />
+                                <motion.div
+                                  className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-yellow-400"
+                                  animate={{ x: loginData.username ? [0, 2, 0] : 0 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <User className="h-4 w-4" />
+                                </motion.div>
+                              </motion.div>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                              <label htmlFor="login-password" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <KeyRound className="h-4 w-4 text-yellow-500" />
+                                Password
+                              </label>
+                              <motion.div
+                                className="relative"
+                                animate={{
+                                  boxShadow: focusedField === "login-password" ? "0 0 20px rgba(251,191,36,0.35)" : "0 0 0 rgba(0,0,0,0)",
+                                }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <Input
+                                  id="login-password"
+                                  type="password"
+                                  placeholder="••••••••"
+                                  value={loginData.password}
+                                  onChange={(e) => setLoginData((prev) => ({ ...prev, password: e.target.value }))}
+                                  onFocus={() => setFocusedField("login-password")}
+                                  onBlur={() => setFocusedField(null)}
+                                  className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
+                                />
+                                <motion.div
+                                  className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-yellow-400"
+                                  animate={{ x: loginData.password ? [0, 2, 0] : 0 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </motion.div>
+                              </motion.div>
+                            </motion.div>
+                            <motion.div
+                              whileHover={{ scale: isPasswordLoginDisabled ? 1 : 1.02 }}
+                              whileTap={{ scale: isPasswordLoginDisabled ? 1 : 0.98 }}
+                              animate={{
+                                background: loginLoading
+                                  ? [
+                                      "linear-gradient(90deg, rgba(251,191,36,1) 0%, rgba(249,115,22,1) 50%, rgba(251,191,36,1) 100%)",
+                                      "linear-gradient(90deg, rgba(249,115,22,1) 0%, rgba(251,191,36,1) 50%, rgba(249,115,22,1) 100%)",
+                                    ]
+                                  : "linear-gradient(90deg, rgba(251,191,36,1), rgba(249,115,22,1))",
+                              }}
+                              transition={{ duration: 2, repeat: loginLoading ? Infinity : 0 }}
+                            >
+                              <Button
+                                type="submit"
+                                disabled={isPasswordLoginDisabled}
+                                className="h-12 w-full rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500 text-base font-semibold text-white shadow-lg shadow-orange-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-orange-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {loginLoading ? (
+                                  <motion.span
+                                    className="flex items-center justify-center gap-2"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                                  >
+                                    <Zap className="h-5 w-5" />
+                                    Loading…
+                                  </motion.span>
+                                ) : (
+                                  <span className="flex items-center justify-center gap-2">Login &amp; Play</span>
+                                )}
+                              </Button>
+                            </motion.div>
+                          </>
+                        ) : (
+                          <>
+                            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                              <label htmlFor="login-otp-email" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <Mail className="h-4 w-4 text-yellow-500" />
+                                University Email
+                              </label>
+                              <motion.div
+                                className="relative"
+                                animate={{
+                                  boxShadow: focusedField === "login-otp-email" ? "0 0 20px rgba(251,191,36,0.35)" : "0 0 0 rgba(0,0,0,0)",
+                                }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <Input
+                                  id="login-otp-email"
+                                  type="email"
+                                  placeholder="you@example.com"
+                                  value={otpEmail}
+                                  onChange={(e) => {
+                                    setOtpEmail(e.target.value);
+                                    setOtpSent(false);
+                                    setOtpCode("");
+                                  }}
+                                  onFocus={() => setFocusedField("login-otp-email")}
+                                  onBlur={() => setFocusedField(null)}
+                                  className={`h-12 rounded-2xl border-2 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 ${
+                                    otpEmail && !isOtpEmailValid
+                                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-200/60"
+                                      : "border-yellow-300/70 hover:border-yellow-400 focus:border-orange-400 focus:ring-orange-200/60"
+                                  }`}
+                                />
+                                <motion.div
+                                  className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center"
+                                  animate={{
+                                    x: otpEmail ? [0, 2, 0] : 0,
+                                    color: otpEmail && !isOtpEmailValid ? "#f43f5e" : "#f59e0b",
+                                  }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <Mail className="h-4 w-4" />
+                                </motion.div>
+                              </motion.div>
+                              {otpEmail && !isOtpEmailValid && (
+                                <motion.p
+                                  initial={{ opacity: 0, y: -4 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="mt-2 flex items-center gap-2 text-xs font-medium text-rose-500"
+                                >
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                  Enter a valid email address to receive your OTP.
+                                </motion.p>
+                              )}
+                            </motion.div>
+
+                            <motion.div
+                              className="flex flex-col gap-4 rounded-2xl border border-yellow-200/60 bg-yellow-50/80 p-4"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <motion.div
+                                whileHover={{ scale: isOtpRequestDisabled ? 1 : 1.01 }}
+                                whileTap={{ scale: isOtpRequestDisabled ? 1 : 0.99 }}
+                              >
+                                <Button
+                                  type="button"
+                                  onClick={handleRequestOtp}
+                                  disabled={isOtpRequestDisabled}
+                                  className="h-11 w-full rounded-xl bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-400 text-sm font-semibold text-white shadow-lg shadow-orange-300/40 transition-all hover:shadow-xl hover:shadow-orange-300/60 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {otpRequestLoading ? (
+                                    <motion.span
+                                      className="flex items-center justify-center gap-2"
+                                      animate={{ rotate: 360 }}
+                                      transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                                    >
+                                      <Zap className="h-5 w-5" />
+                                      Sending…
+                                    </motion.span>
+                                  ) : (
+                                    <span className="flex items-center justify-center gap-2">Request OTP</span>
+                                  )}
+                                </Button>
+                              </motion.div>
+
+                              <div className="space-y-3">
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <InputOTP
+                                    maxLength={6}
+                                    value={otpCode}
+                                    onChange={(value) => setOtpCode(value.replace(/\D/g, ""))}
+                                    containerClassName="justify-center"
+                                  >
+                                    <InputOTPGroup className="gap-2">
+                                      {Array.from({ length: 6 }).map((_, index) => (
+                                        <InputOTPSlot
+                                          key={index}
+                                          index={index}
+                                          className="flex h-12 w-10 items-center justify-center rounded-xl border-2 border-yellow-200 bg-white/90 text-lg font-semibold text-gray-700 shadow-inner transition-all duration-200 data-[active=true]:border-orange-400 data-[filled=true]:border-orange-400"
+                                        />
+                                      ))}
+                                    </InputOTPGroup>
+                                  </InputOTP>
+                                  <p className="text-xs font-medium text-gray-500">Enter the 6-digit code sent to your email.</p>
+                                </div>
+                                {otpSent && (
+                                  <motion.p
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-600"
+                                  >
+                                    <ShieldCheck className="h-3.5 w-3.5" />
+                                    OTP sent to <span className="font-bold">{trimmedOtpEmail}</span>. Check your inbox and spam folder.
+                                  </motion.p>
+                                )}
+                              </div>
+
+                              <motion.div
+                                whileHover={{ scale: isOtpVerifyDisabled ? 1 : 1.02 }}
+                                whileTap={{ scale: isOtpVerifyDisabled ? 1 : 0.98 }}
+                                animate={{
+                                  background: loginLoading
+                                    ? [
+                                        "linear-gradient(90deg, rgba(251,191,36,1) 0%, rgba(249,115,22,1) 50%, rgba(251,191,36,1) 100%)",
+                                        "linear-gradient(90deg, rgba(249,115,22,1) 0%, rgba(251,191,36,1) 50%, rgba(249,115,22,1) 100%)",
+                                      ]
+                                    : "linear-gradient(90deg, rgba(251,191,36,1), rgba(249,115,22,1))",
+                                }}
+                                transition={{ duration: 2, repeat: loginLoading ? Infinity : 0 }}
+                              >
+                                <Button
+                                  type="submit"
+                                  disabled={isOtpVerifyDisabled}
+                                  className="h-11 w-full rounded-xl bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500 text-sm font-semibold text-white shadow-lg shadow-orange-300/40 transition-all hover:shadow-xl hover:shadow-orange-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {loginLoading ? (
+                                    <motion.span
+                                      className="flex items-center justify-center gap-2"
+                                      animate={{ rotate: 360 }}
+                                      transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                                    >
+                                      <Zap className="h-5 w-5" />
+                                      Verifying…
+                                    </motion.span>
+                                  ) : (
+                                    <span className="flex items-center justify-center gap-2">Verify &amp; Login</span>
+                                  )}
+                                </Button>
+                              </motion.div>
+                            </motion.div>
+                          </>
+                        )}
                       </motion.form>
                     </TabsContent>
                     <TabsContent value="register" asChild>
@@ -933,24 +1285,24 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                           )}
                         </motion.div>
                         <motion.div
-                          whileHover={{ scale: isLoading || registerHasBlockingErrors ? 1 : 1.02 }}
-                          whileTap={{ scale: isLoading || registerHasBlockingErrors ? 1 : 0.98 }}
+                          whileHover={{ scale: registerLoading || registerHasBlockingErrors ? 1 : 1.02 }}
+                          whileTap={{ scale: registerLoading || registerHasBlockingErrors ? 1 : 0.98 }}
                           animate={{
-                            background: isLoading
+                            background: registerLoading
                               ? [
                                   "linear-gradient(90deg, rgba(249,115,22,1) 0%, rgba(236,72,153,1) 50%, rgba(249,115,22,1) 100%)",
                                   "linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(249,115,22,1) 50%, rgba(236,72,153,1) 100%)",
                                 ]
                               : "linear-gradient(90deg, rgba(249,115,22,1), rgba(236,72,153,1))",
                           }}
-                          transition={{ duration: 2, repeat: isLoading ? Infinity : 0 }}
+                          transition={{ duration: 2, repeat: registerLoading ? Infinity : 0 }}
                         >
                           <Button
                             type="submit"
-                            disabled={isLoading || registerHasBlockingErrors}
+                            disabled={registerLoading || registerHasBlockingErrors}
                             className="h-12 w-full rounded-2xl bg-gradient-to-r from-orange-400 via-red-400 to-pink-500 text-base font-semibold text-white shadow-lg shadow-orange-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-rose-400/60 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {isLoading ? (
+                            {registerLoading ? (
                               <motion.span
                                 className="flex items-center justify-center gap-2"
                                 animate={{ rotate: 360 }}
