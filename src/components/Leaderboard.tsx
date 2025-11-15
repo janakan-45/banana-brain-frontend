@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Medal, Award, Home, RefreshCw } from "lucide-react";
+import { Trophy, Medal, Award, Home, RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
 interface LeaderboardProps {
@@ -29,7 +30,6 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
         const accessToken = localStorage.getItem("accessToken");
         if (!accessToken) throw new Error("No access token found. Please log in again.");
 
-        // ✅ Include Bearer token in Authorization header
         const response = await fetch(`${apiBaseUrl}/banana/leaderboard/`, {
           method: "GET",
           headers: {
@@ -70,73 +70,101 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
-        return <Trophy className="w-6 h-6 text-yellow-500" />;
+        return <Trophy className="w-6 h-6 text-yellow-400" />;
       case 1:
-        return <Medal className="w-6 h-6 text-gray-400" />;
+        return <Medal className="w-6 h-6 text-gray-300" />;
       case 2:
-        return <Award className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-orange-400" />;
       default:
-        return <span className="w-6 text-center font-bold text-muted-foreground">{index + 1}</span>;
+        return <span className="w-6 text-center font-bold text-gray-600">{index + 1}</span>;
     }
   };
 
   const userRank = leaderboard.findIndex((entry) => entry.username === username) + 1;
 
   const getRankEmoji = () => {
-    if (userRank === 1) return "🏆";
-    if (userRank === 2) return "🥈";
-    if (userRank === 3) return "🥉";
-    return "🎉";
+    if (userRank === 1) return "🍌👑";
+    if (userRank === 2) return "🍌🥈";
+    if (userRank === 3) return "🍌🥉";
+    return "🍌✨";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-      <Card className="w-full max-w-2xl p-8 shadow-xl animate-slide-in">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-yellow-100 via-yellow-50 to-amber-100">
+      {/* Floating bananas background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute text-6xl animate-bounce" style={{ top: '10%', left: '10%', animationDelay: '0s' }}>🍌</div>
+        <div className="absolute text-4xl animate-bounce" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}>🍌</div>
+        <div className="absolute text-5xl animate-bounce" style={{ bottom: '15%', left: '20%', animationDelay: '1s' }}>🍌</div>
+        <div className="absolute text-3xl animate-bounce" style={{ bottom: '25%', right: '10%', animationDelay: '1.5s' }}>🍌</div>
+      </div>
+
+      <Card className="w-full max-w-2xl p-8 shadow-2xl bg-white/95 backdrop-blur-sm border-4 border-yellow-400 relative z-10">
+        {/* Decorative banana bunches */}
+        <div className="absolute -top-8 -left-8 text-6xl transform -rotate-12">🍌🍌</div>
+        <div className="absolute -top-8 -right-8 text-6xl transform rotate-12">🍌🍌</div>
+        
         <div className="text-center mb-8">
-          <div className="text-8xl mb-4 animate-bounce">{getRankEmoji()}</div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
-            Game Over!
+          <div className="text-7xl mb-4 animate-bounce">{getRankEmoji()}</div>
+          <h1 className="text-5xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-yellow-600 to-amber-600">
+            Banana Quiz Complete!
           </h1>
-          <p className="text-xl text-muted-foreground mb-4">
-            Great job, <span className="font-bold text-foreground">{username}</span>!
+          <p className="text-xl text-gray-700 mb-4">
+            Way to go, <span className="font-bold text-yellow-600">{username}</span>! 🎉
           </p>
-          <div className="inline-block gradient-primary text-primary-foreground px-6 py-3 rounded-full text-2xl font-bold shadow-glow mb-2">
-            Your Score: {currentScore}
+          <div className="inline-block bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-8 py-4 rounded-full text-3xl font-bold shadow-lg mb-2 border-2 border-yellow-300">
+            🍌 {currentScore} Points
           </div>
           {userRank > 0 && (
-            <p className="text-lg text-muted-foreground">
-              You are ranked #{userRank} on the leaderboard!
+            <p className="text-lg text-gray-600 font-semibold">
+              You're #{userRank} on the Banana Board!
             </p>
           )}
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">
-            <Trophy className="w-6 h-6 text-primary" />
-            Top 10 Players
+          <h2 className="text-3xl font-bold mb-6 flex items-center justify-center gap-3 text-yellow-700">
+            <Trophy className="w-8 h-8 text-yellow-500" />
+            Top Banana Players
+            <Trophy className="w-8 h-8 text-yellow-500" />
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {loading ? (
-              <p className="text-center text-muted-foreground">Loading scores...</p>
+              <div className="text-center py-8">
+                <div className="text-5xl mb-4 animate-spin">🍌</div>
+                <p className="text-gray-600 font-medium">Loading the bunch...</p>
+              </div>
             ) : leaderboard.length > 0 ? (
               leaderboard.map((entry, index) => (
                 <div
                   key={index}
-                  className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                  className={`flex items-center justify-between p-4 rounded-xl transition-all ${
                     entry.username === username
-                      ? "gradient-primary text-primary-foreground shadow-lg scale-105"
-                      : "bg-muted hover:bg-card"
+                      ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-xl scale-105 border-2 border-yellow-300"
+                      : index === 0
+                      ? "bg-gradient-to-r from-yellow-200 to-amber-200 hover:shadow-lg border-2 border-yellow-300"
+                      : index === 1
+                      ? "bg-gradient-to-r from-gray-100 to-gray-200 hover:shadow-lg border-2 border-gray-300"
+                      : index === 2
+                      ? "bg-gradient-to-r from-orange-100 to-amber-100 hover:shadow-lg border-2 border-orange-300"
+                      : "bg-yellow-50 hover:bg-yellow-100 border-2 border-yellow-200 hover:shadow-md"
                   }`}
                 >
                   <div className="flex items-center gap-4">
                     {getRankIcon(index)}
-                    <span className="font-semibold text-lg">{entry.username}</span>
+                    <span className="font-bold text-lg">{entry.username}</span>
                   </div>
-                  <span className="text-xl font-bold">{entry.score}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold">{entry.score}</span>
+                    <span className="text-xl">🍌</span>
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-muted-foreground">No leaderboard data found.</p>
+              <div className="text-center py-8">
+                <div className="text-5xl mb-4">🍌❓</div>
+                <p className="text-gray-600 font-medium">No scores yet. Be the first!</p>
+              </div>
             )}
           </div>
         </div>
@@ -144,18 +172,18 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button
             onClick={onPlayAgain}
-            className="gradient-primary hover:scale-105 transition-transform shadow-glow text-lg py-6"
+            className="bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white font-bold text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 border-2 border-yellow-300"
           >
             <RefreshCw className="w-5 h-5 mr-2" />
-            Play Again
+            Go Bananas Again! 🍌
           </Button>
           <Button
             onClick={onBackToLogin}
             variant="outline"
-            className="hover:scale-105 transition-transform text-lg py-6"
+            className="bg-white hover:bg-yellow-50 border-2 border-yellow-400 text-yellow-700 font-bold text-lg py-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:scale-105"
           >
             <Home className="w-5 h-5 mr-2" />
-            Back to Home
+            Back to Home 🏠
           </Button>
         </div>
       </Card>
