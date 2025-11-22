@@ -104,6 +104,29 @@ All colors MUST be HSL.
   body {
     @apply bg-gradient-to-br from-background to-muted text-foreground min-h-screen;
   }
+
+  /* Hide scrollbar globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  /* Performance optimizations for smooth scrolling */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* GPU acceleration for animated elements */
+  [data-framer-component] {
+    transform: translateZ(0);
+    will-change: transform;
+  }
 }
 
 @layer utilities {
@@ -143,6 +166,17 @@ All colors MUST be HSL.
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
 

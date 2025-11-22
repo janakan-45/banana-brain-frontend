@@ -226,24 +226,6 @@ const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
                   </div>
                 </motion.button>
               </div>
-
-              <div className="grid gap-4 rounded-3xl border border-yellow-200/50 bg-white/70 p-6 text-[#6b4c00] backdrop-blur-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#b07900]/70">Live Banana Telemetry</p>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-yellow-200/50 bg-white/80 p-4 text-center">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[#a06f00]/60">Players Online</p>
-                    <p className="mt-2 text-xl font-black text-amber-600">128</p>
-                  </div>
-                  <div className="rounded-2xl border border-yellow-200/50 bg-white/80 p-4 text-center">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[#a06f00]/60">World Record</p>
-                    <p className="mt-2 text-xl font-black text-rose-500">98,720</p>
-                  </div>
-                  <div className="rounded-2xl border border-yellow-200/50 bg-white/80 p-4 text-center">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[#a06f00]/60">Combo Chain</p>
-                    <p className="mt-2 text-xl font-black text-emerald-500">x12</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </motion.div>
         </motion.div>

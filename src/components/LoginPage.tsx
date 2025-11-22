@@ -21,6 +21,9 @@ import {
   Trophy,
   KeyRound,
   ArrowLeft,
+  Eye,
+  EyeOff,
+  Lock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -154,6 +157,9 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
   const [otpSent, setOtpSent] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"login" | "register">(initialTab);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -862,7 +868,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                             </motion.div>
                             <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                               <label htmlFor="login-password" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <KeyRound className="h-4 w-4 text-yellow-500" />
+                                <Lock className="h-4 w-4 text-yellow-500" />
                                 Password
                               </label>
                               <motion.div
@@ -874,21 +880,33 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                               >
                                 <Input
                                   id="login-password"
-                                  type="password"
+                                  type={showLoginPassword ? "text" : "password"}
                                   placeholder="••••••••"
                                   value={loginData.password}
                                   onChange={(e) => setLoginData((prev) => ({ ...prev, password: e.target.value }))}
                                   onFocus={() => setFocusedField("login-password")}
                                   onBlur={() => setFocusedField(null)}
-                                  className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
+                                  className="h-12 rounded-2xl border-2 border-yellow-300/70 bg-white/85 pl-12 pr-12 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 hover:border-yellow-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60"
                                 />
                                 <motion.div
                                   className="pointer-events-none absolute left-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-yellow-400"
                                   animate={{ x: loginData.password ? [0, 2, 0] : 0 }}
                                   transition={{ duration: 0.3 }}
                                 >
-                                  <KeyRound className="h-4 w-4" />
+                                  <Lock className="h-4 w-4" />
                                 </motion.div>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                                  tabIndex={-1}
+                                >
+                                  {showLoginPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </button>
                               </motion.div>
                             </motion.div>
                             <motion.div
@@ -1188,7 +1206,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                         </motion.div>
                         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                           <label htmlFor="register-password" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <KeyRound className="h-4 w-4 text-yellow-500" />
+                            <Lock className="h-4 w-4 text-yellow-500" />
                             Password
                           </label>
                           <motion.div
@@ -1200,14 +1218,14 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                           >
                             <Input
                               id="register-password"
-                              type="password"
+                              type={showRegisterPassword ? "text" : "password"}
                               placeholder="Create a strong password"
                               value={registerData.password}
                               onChange={(e) => handleRegisterInputChange("password", e.target.value)}
                               onFocus={() => setFocusedField("register-password")}
                               onBlur={() => handleRegisterBlur("password")}
                               aria-invalid={registerTouched.password && Boolean(registerErrors.password)}
-                              className={`h-12 rounded-2xl border-2 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 ${
+                              className={`h-12 rounded-2xl border-2 bg-white/85 pl-12 pr-12 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 ${
                                 registerTouched.password && registerErrors.password
                                   ? "border-rose-300 focus:border-rose-500 focus:ring-rose-200/60"
                                   : "border-yellow-300/80 hover:border-orange-300 focus:border-orange-400 focus:ring-orange-200/70"
@@ -1221,8 +1239,20 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                               }}
                               transition={{ duration: 0.3 }}
                             >
-                              <KeyRound className="h-4 w-4" />
+                              <Lock className="h-4 w-4" />
                             </motion.div>
+                            <button
+                              type="button"
+                              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                              tabIndex={-1}
+                            >
+                              {showRegisterPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </button>
                           </motion.div>
                           {registerTouched.password && registerErrors.password && (
                             <motion.p
@@ -1237,7 +1267,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                         </motion.div>
                         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                           <label htmlFor="register-confirm-password" className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <ShieldCheck className="h-4 w-4 text-yellow-500" />
+                            <Lock className="h-4 w-4 text-yellow-500" />
                             Confirm Password
                           </label>
                           <motion.div
@@ -1249,14 +1279,14 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                           >
                             <Input
                               id="register-confirm-password"
-                              type="password"
+                              type={showConfirmPassword ? "text" : "password"}
                               placeholder="Repeat your password"
                               value={registerData.confirmPassword}
                               onChange={(e) => handleRegisterInputChange("confirmPassword", e.target.value)}
                               onFocus={() => setFocusedField("register-confirm-password")}
                               onBlur={() => handleRegisterBlur("confirmPassword")}
                               aria-invalid={registerTouched.confirmPassword && Boolean(registerErrors.confirmPassword)}
-                              className={`h-12 rounded-2xl border-2 bg-white/85 pl-12 pr-4 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 ${
+                              className={`h-12 rounded-2xl border-2 bg-white/85 pl-12 pr-12 text-base font-medium text-gray-700 shadow-inner transition-all duration-300 ${
                                 registerTouched.confirmPassword && registerErrors.confirmPassword
                                   ? "border-rose-300 focus:border-rose-500 focus:ring-rose-200/60"
                                   : "border-yellow-300/80 hover:border-orange-300 focus:border-orange-400 focus:ring-orange-200/70"
@@ -1270,8 +1300,20 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                               }}
                               transition={{ duration: 0.3 }}
                             >
-                              <ShieldCheck className="h-4 w-4" />
+                              <Lock className="h-4 w-4" />
                             </motion.div>
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                              tabIndex={-1}
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </button>
                           </motion.div>
                           {registerTouched.confirmPassword && registerErrors.confirmPassword && (
                             <motion.p
@@ -1320,27 +1362,6 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                     </TabsContent>
                   </AnimatePresence>
                 </Tabs>
-                <motion.div
-                  className="mt-6 space-y-2 text-center text-xs text-gray-600"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                >
-                  <p className="flex items-center justify-center gap-2">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                    Secure authentication with JWT
-                  </p>
-                  <p className="flex items-center justify-center gap-2">
-                    <Gamepad2 className="h-3.5 w-3.5 text-indigo-500" />
-                    Event-driven gameplay with instant feedback
-                  </p>
-                  <p className="flex items-center justify-center gap-2">
-                    <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                    Powered by the Banana API leaderboard
-                  </p>
-                  <p className="text-[0.65rem] text-gray-500">Backend endpoint: {apiBaseUrl}</p>
-                  <p className="text-[0.65rem] text-gray-500">Puzzle feed: {puzzleApiUrl}</p>
-                </motion.div>
               </div>
             </Card>
           </motion.div>

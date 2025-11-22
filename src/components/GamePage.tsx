@@ -15,7 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { invokeLogoutEndpoint, clearStoredSession, type LogoutEndpoint } from "@/lib/auth";
-import { Trophy, Timer, Zap, LogOut, Sparkles, Star, Coins, Lightbulb, Snowflake, Gem, Award, ShoppingCart } from "lucide-react";
+import { Trophy, Timer, Zap, LogOut, Sparkles, Star, Coins, Lightbulb, Snowflake, Gem, Award, ShoppingCart, TrendingUp, Target, Calendar, BarChart3 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface GamePageProps {
   username: string;
@@ -64,6 +65,16 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   const [showShop, setShowShop] = useState(false);
   const [puzzleStartTime, setPuzzleStartTime] = useState<number>(0);
   const [isTimerFrozen, setIsTimerFrozen] = useState(false);
+  // New game mechanics state
+  const [level, setLevel] = useState(1);
+  const [xp, setXp] = useState(0);
+  const [xpNeeded, setXpNeeded] = useState(100);
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [combo, setCombo] = useState(0);
+  const [hintsUsedThisPuzzle, setHintsUsedThisPuzzle] = useState(0);
+  const [showStats, setShowStats] = useState(false);
+  const [dailyChallenge, setDailyChallenge] = useState<any>(null);
+  const [doublePointsActive, setDoublePointsActive] = useState(false);
   const [backgroundOrbs] = useState(() =>
     Array.from({ length: 4 }, (_, id) => ({
       id,
@@ -149,6 +160,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     setLoading(true);
     setIsTimerFrozen(false);
     setUserAnswer("");
+    setHintsUsedThisPuzzle(0); // Reset hints used for new puzzle
     try {
       const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${apiBaseUrl}/banana/puzzle/`, {
@@ -157,7 +169,9 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       if (!response.ok) throw new Error("Failed to fetch puzzle");
       const data = await response.json();
       setPuzzle(data);
-      setTimeLeft(40);
+      // Set time based on difficulty
+      const timeLimits = { easy: 50, medium: 40, hard: 30 };
+      setTimeLeft(timeLimits[difficulty]);
       setPuzzleStartTime(Date.now());
       setShowImageModal(true);
     } catch (error) {
@@ -184,15 +198,58 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       setCoins(data.coins);
       setPowerUps({ hint: data.hints, freeze: data.freezes, superBanana: data.super_bananas });
       setAchievements(prev => prev.map(a => ({ ...a, unlocked: data.achievements.includes(a.id) })));
-    } catch (error) {
+      // Update new game mechanics
+      if (data.level) setLevel(data.level);
+      if (data.xp !== undefined) setXp(data.xp);
+      if (data.difficulty) setDifficulty(data.difficulty);
+      if (data.combo_count !== undefined) setCombo(data.combo_count);
+    } catch (error: any) {
       toast({ title: "Error", description: `Failed to load player data: ${error.message}`, variant: "destructive" });
     }
   }, [apiBaseUrl, onLogout, toast]);
 
+  const fetchGameStats = useCallback(async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+      const response = await fetch(`${apiBaseUrl}/banana/game-stats/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLevel(data.level);
+        setXp(data.xp);
+        setXpNeeded(data.xp_needed);
+        setCombo(data.combo);
+        setDifficulty(data.difficulty);
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  }, [apiBaseUrl]);
+
+  const fetchDailyChallenge = useCallback(async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+      const response = await fetch(`${apiBaseUrl}/banana/daily-challenge/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDailyChallenge(data);
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  }, [apiBaseUrl]);
+
   useEffect(() => {
     fetchPlayerData();
+    fetchGameStats();
+    fetchDailyChallenge();
     fetchPuzzle();
-  }, [fetchPlayerData]);
+  }, [fetchPlayerData, fetchGameStats, fetchDailyChallenge]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -228,24 +285,71 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     setFailureParticles(newParticles);
   }, []);
 
-  const useHint = useCallback(() => {
-    if (powerUps.hint > 0 && puzzle) {
-      const newHintCount = powerUps.hint - 1;
-      setPowerUps(prev => ({ ...prev, hint: newHintCount }));
-      updatePlayerData({ hints: newHintCount });
+  const useHint = useCallback(async () => {
+    if (powerUps.hint <= 0) {
+      toast({
+        title: "No Hints Available",
+        description: "You don't have any hints left. Buy more from the shop!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!puzzle) {
+      toast({
+        title: "No Puzzle",
+        description: "Please wait for a puzzle to load.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        toast({ title: "Error", description: "Please log in again.", variant: "destructive" });
+        onLogout();
+        return;
+      }
+
+      const response = await fetch(`${apiBaseUrl}/banana/use-hint/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        toast({ title: "Session Expired", description: "Please log in again.", variant: "destructive" });
+        onLogout();
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to use hint");
+      }
+
+      const data = await response.json();
       
-      let randomHint;
-      do {
-        randomHint = Math.floor(Math.random() * 9) + 1;
-      } while (String(randomHint) === puzzle.solution);
+      // Update local state with remaining hints
+      setPowerUps(prev => ({ ...prev, hint: data.hints_remaining }));
+      setHintsUsedThisPuzzle(prev => prev + 1); // Track hints used
 
       toast({
-        title: "💡 Hint Used!",
-        description: `${randomHint} is NOT the answer`,
+        title: data.title || "💡 Hint Used!",
+        description: data.hint,
         className: "gradient-primary text-white",
       });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to use hint. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [powerUps.hint, puzzle, toast, updatePlayerData]);
+  }, [powerUps.hint, puzzle, toast, apiBaseUrl, onLogout]);
 
   const useFreeze = useCallback(() => {
     if (powerUps.freeze > 0 && !isTimerFrozen) {
@@ -267,25 +371,20 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   }, [powerUps.freeze, isTimerFrozen, toast, updatePlayerData]);
 
   const useSuperBanana = useCallback(() => {
-    if (powerUps.superBanana > 0 && puzzle) {
+    if (powerUps.superBanana > 0) {
       const newSuperBananaCount = powerUps.superBanana - 1;
       setPowerUps(prev => ({ ...prev, superBanana: newSuperBananaCount }));
       updatePlayerData({ super_bananas: newSuperBananaCount });
-
-      const answers = new Set([puzzle.solution]);
-      while (answers.size < 3) {
-        answers.add(String(Math.floor(Math.random() * 9) + 1));
-      }
-      const shuffledAnswers = Array.from(answers).sort(() => Math.random() - 0.5);
+      setDoublePointsActive(true); // Activate double points for next solve
       
       toast({
-        title: "🍌🏆 Super Banana Activated!",
-        description: `Possible answers: ${shuffledAnswers.join(', ')}`,
+        title: "🍌✨ Super Banana Activated!",
+        description: "Your next correct answer will earn DOUBLE POINTS!",
         className: "gradient-golden text-black",
         duration: 5000,
       });
     }
-  }, [powerUps.superBanana, puzzle, toast, updatePlayerData]);
+  }, [powerUps.superBanana, toast, updatePlayerData]);
 
   const buyPowerUp = useCallback((powerUpType: 'hint' | 'freeze' | 'superBanana', cost: number) => {
     if (coins >= cost) {
@@ -311,6 +410,9 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   const handleSubmit = useCallback(async () => {
     if (!puzzle || !userAnswer) return;
 
+    // Calculate time taken
+    const timeTaken = puzzleStartTime > 0 ? Math.floor((Date.now() - puzzleStartTime) / 1000) : 0;
+
     // ✅ Ask backend to verify the answer
     const checkAnswer = async () => {
       try {
@@ -324,6 +426,8 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
           body: JSON.stringify({
             answer: userAnswer,
             puzzle_url: puzzle.question,
+            time_taken: timeTaken,
+            hints_used: hintsUsedThisPuzzle,
           }),
         });
         return await response.json();
@@ -335,9 +439,22 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     const result = await checkAnswer();
 
     if (result.correct) {
-      // ✅ Correct Answer
-      const points = 10 + streak * 5 + Math.floor(timeLeft / 3);
-      const earnedCoins = 5 + Math.floor(streak / 2);
+      // ✅ Correct Answer - Use backend calculated points
+      let points = result.points || 10;
+      
+      // Apply double points if Super Banana is active
+      if (doublePointsActive) {
+        points = points * 2;
+        setDoublePointsActive(false); // Deactivate after use
+        toast({
+          title: "🎊 Double Points!",
+          description: "Super Banana bonus applied!",
+          className: "gradient-golden text-black",
+          duration: 3000,
+        });
+      }
+      
+      const earnedCoins = 5 + Math.floor((result.combo || 0) / 2);
       const newScore = score + points;
       const newCoins = coins + earnedCoins;
       const newStreak = streak + 1;
@@ -345,12 +462,43 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       setScore(newScore);
       setCoins(newCoins);
       setStreak(newStreak);
+      setCombo(result.combo || 0);
+      
+      // Update XP and level
+      if (result.xp_gained) {
+        setXp(prev => prev + result.xp_gained);
+      }
+      if (result.leveled_up && result.new_level) {
+        setLevel(result.new_level);
+        setXpNeeded(100); // Reset for new level
+        toast({
+          title: "🎊 Level Up!",
+          description: `You reached level ${result.new_level}!`,
+          className: "gradient-golden text-black",
+          duration: 4000,
+        });
+      }
+      
       updatePlayerData({ coins: newCoins });
+
+      // Build description with breakdown
+      let description = `+${points} points & ${earnedCoins} coins!`;
+      if (result.breakdown) {
+        description += `\nBase: ${result.breakdown.base_points}`;
+        if (result.breakdown.time_bonus > 0) description += ` | Time: +${result.breakdown.time_bonus}`;
+        if (result.breakdown.combo_bonus > 0) description += ` | Combo: +${result.breakdown.combo_bonus}`;
+        if (result.breakdown.perfect_bonus > 0) description += ` | Perfect: +${result.breakdown.perfect_bonus}`;
+        if (result.breakdown.lucky_multiplier > 1) description += ` | 🍀 Lucky ${result.breakdown.lucky_multiplier}x!`;
+      }
+      if (result.perfect_solve) {
+        description += `\n✨ Perfect Solve! (No hints used)`;
+      }
 
       toast({
         title: "🎉 Correct!",
-        description: `+${points} points & ${earnedCoins} coins! Streak: ${newStreak}`,
+        description: description,
         className: "gradient-success text-white",
+        duration: 5000,
       });
 
       setShowCelebration(true);
@@ -360,10 +508,12 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setShowCelebration(false);
         setParticles([]);
         fetchPuzzle();
+        fetchGameStats(); // Refresh stats
       }, 2000);
     } else {
       // ❌ Incorrect Answer — show correct one from backend
       setStreak(0);
+      setCombo(0);
       setShowFailure(true);
       generateFailureParticles();
 
@@ -377,6 +527,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setShowFailure(false);
         setFailureParticles([]);
         fetchPuzzle();
+        fetchGameStats(); // Refresh stats
       }, 2000);
     }
   }, [
@@ -391,6 +542,10 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     toast,
     updatePlayerData,
     fetchPuzzle,
+    puzzleStartTime,
+    hintsUsedThisPuzzle,
+    fetchGameStats,
+    doublePointsActive,
   ]);
 
   const handleSkip = () => {
@@ -528,11 +683,23 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
               {username}
             </Badge>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-purple-400 to-purple-600 text-white px-3 py-1.5 rounded-full shadow-glow">
+              <TrendingUp className="w-4 h-4" />
+              <span className="font-bold">Lv.{level}</span>
+            </div>
             <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full shadow-glow">
               <Coins className="w-5 h-5 animate-spark-explosion" />
               <span className="font-bold">{coins} Coins</span>
             </div>
+            <Button
+              onClick={() => setShowStats(true)}
+              variant="outline"
+              className="flex items-center gap-2 hover:scale-105 transition-bounce"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Stats
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -570,8 +737,43 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
           </div>
         </div>
 
+        {/* Difficulty Selector */}
+        <Card className="p-4 mb-4 bg-gradient-to-br from-indigo-50/80 to-indigo-100/80 shadow-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Target className="w-5 h-5 text-indigo-600" />
+              <span className="font-semibold">Difficulty:</span>
+            </div>
+            <Select value={difficulty} onValueChange={async (value: 'easy' | 'medium' | 'hard') => {
+              setDifficulty(value);
+              try {
+                const accessToken = localStorage.getItem('accessToken');
+                await fetch(`${apiBaseUrl}/banana/set-difficulty/`, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ difficulty: value }),
+                });
+              } catch (error) {
+                // Silently fail
+              }
+            }}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="easy">Easy (50s)</SelectItem>
+                <SelectItem value="medium">Medium (40s)</SelectItem>
+                <SelectItem value="hard">Hard (30s)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+
         {/* Game Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4 bg-gradient-to-br from-blue-50/80 to-blue-100/80 shadow-card animate-slide-in backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />
@@ -590,6 +792,15 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
               </div>
             </div>
           </Card>
+          <Card className="p-4 bg-gradient-to-br from-pink-50/80 to-pink-100/80 shadow-card animate-slide-in backdrop-blur-sm" style={{animationDelay: '0.15s'}}>
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-pink-500 animate-pulse" />
+              <div>
+                <p className="text-sm text-muted-foreground">Combo</p>
+                <p className="text-2xl font-bold">{combo}</p>
+              </div>
+            </div>
+          </Card>
           <Card className="p-4 bg-gradient-to-br from-purple-50/80 to-purple-100/80 shadow-card animate-slide-in backdrop-blur-sm" style={{animationDelay: '0.2s'}}>
             <div className="flex items-center gap-3">
               <Timer className="w-6 h-6 text-red-500 animate-pulse" />
@@ -598,9 +809,67 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
                 <p className="text-2xl font-bold">{timeLeft}s</p>
               </div>
             </div>
-            <Progress value={(timeLeft / 50) * 100} className="mt-2 h-2 bg-red-100" />
+            <Progress value={(timeLeft / (difficulty === 'easy' ? 50 : difficulty === 'medium' ? 40 : 30)) * 100} className="mt-2 h-2 bg-red-100" />
           </Card>
         </div>
+
+        {/* XP Progress */}
+        <Card className="p-4 mb-6 bg-gradient-to-br from-cyan-50/80 to-cyan-100/80 shadow-card">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold">Level {level} Progress</span>
+            <span className="text-sm text-muted-foreground">{xp} / {xpNeeded + (level - 1) * 100} XP</span>
+          </div>
+          <Progress value={(xp % 100) / 100 * 100} className="h-3" />
+        </Card>
+
+        {/* Daily Challenge */}
+        {dailyChallenge && (
+          <Card className="p-4 mb-6 bg-gradient-to-br from-amber-50/80 to-amber-100/80 shadow-card border-2 border-amber-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-amber-600" />
+                <div>
+                  <p className="font-bold">Daily Challenge</p>
+                  <p className="text-sm text-muted-foreground">
+                    {dailyChallenge.completed 
+                      ? `Completed! Streak: ${dailyChallenge.streak} days 🔥`
+                      : dailyChallenge.message}
+                  </p>
+                </div>
+              </div>
+              {!dailyChallenge.completed && (
+                <Button
+                  onClick={async () => {
+                    try {
+                      const accessToken = localStorage.getItem('accessToken');
+                      const response = await fetch(`${apiBaseUrl}/banana/claim-daily-challenge/`, {
+                        method: 'POST',
+                        headers: {
+                          Authorization: `Bearer ${accessToken}`,
+                        },
+                      });
+                      if (response.ok) {
+                        const data = await response.json();
+                        setCoins(data.new_balance);
+                        toast({
+                          title: "🎉 Daily Challenge!",
+                          description: `Earned ${data.reward} coins! Streak: ${data.streak} days`,
+                          className: "gradient-success text-white",
+                        });
+                        fetchDailyChallenge();
+                      }
+                    } catch (error) {
+                      // Silently fail
+                    }
+                  }}
+                  className="bg-gradient-to-r from-amber-400 to-amber-600 text-white"
+                >
+                  Claim Reward
+                </Button>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Power-Ups */}
         <Card className="p-4 mb-6 bg-gradient-to-br from-yellow-50/80 to-orange-50/80 shadow-card animate-slide-in backdrop-blur-sm">
@@ -614,9 +883,15 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
                   <Snowflake className="w-5 h-5 animate-spin-slow" />
                   <span>Use Freeze ({powerUps.freeze})</span>
               </Button>
-              <Button onClick={useSuperBanana} disabled={powerUps.superBanana <= 0} className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:scale-105 transition-bounce relative group disabled:opacity-50">
+              <Button 
+                onClick={useSuperBanana} 
+                disabled={powerUps.superBanana <= 0 || doublePointsActive} 
+                className={`flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:scale-105 transition-bounce relative group disabled:opacity-50 ${doublePointsActive ? 'ring-4 ring-yellow-300 animate-pulse' : ''}`}
+              >
                   <Gem className="w-5 h-5 animate-spark-explosion" />
-                  <span>Use Super Banana ({powerUps.superBanana})</span>
+                  <span>
+                    {doublePointsActive ? '2x Points Active!' : `Use Super Banana (${powerUps.superBanana})`}
+                  </span>
               </Button>
               <Button onClick={() => setShowShop(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-400 to-purple-600 text-white hover:scale-105 transition-bounce">
                   <ShoppingCart className="w-5 h-5" />
@@ -637,7 +912,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
               {[
                 { id: 'hint', name: 'Hint', cost: 10, icon: <Lightbulb className="w-6 h-6" />, description: 'Reveal a wrong answer' },
                 { id: 'freeze', name: 'Time Freeze', cost: 15, icon: <Snowflake className="w-6 h-6" />, description: 'Add 10 seconds to timer' },
-                { id: 'superBanana', name: 'Super Banana', cost: 25, icon: <Gem className="w-6 h-6" />, description: 'Show 3 possible answers' },
+                { id: 'superBanana', name: 'Super Banana', cost: 25, icon: <Gem className="w-6 h-6" />, description: 'Double points for next correct answer' },
               ].map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-lg shadow-card hover:scale-105 transition-bounce">
                   <div className="flex items-center gap-3">
@@ -787,6 +1062,48 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
             </>
           ) : null}
         </Card>
+
+        {/* Stats Modal */}
+        <Dialog open={showStats} onOpenChange={setShowStats}>
+          <DialogContent className="bg-gradient-to-br from-white to-gray-50 shadow-neon max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold gradient-text animate-gradient">
+                Game Statistics
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  <span className="font-bold">Level {level}</span>
+                </div>
+                <Progress value={(xp % 100) / 100 * 100} className="h-2" />
+                <p className="text-sm text-muted-foreground mt-1">{xp % 100} / 100 XP to next level</p>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-pink-600" />
+                  <span className="font-bold">Combo: {combo}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Keep solving to build your combo!</p>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-5 h-5 text-indigo-600" />
+                  <span className="font-bold">Difficulty</span>
+                </div>
+                <p className="text-lg capitalize">{difficulty}</p>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-5 h-5 text-yellow-600" />
+                  <span className="font-bold">High Score</span>
+                </div>
+                <p className="text-lg">{score}</p>
+              </Card>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* End Game Button */}
         <div className="mt-6 text-center">
