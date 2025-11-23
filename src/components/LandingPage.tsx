@@ -4,6 +4,7 @@ import { Gamepad2, LogIn, Sparkles, Trophy, UserPlus, Zap } from "lucide-react";
 
 interface LandingPageProps {
   onSelectAuth: (mode: "login" | "register") => void;
+  onNavigate?: (view: string) => void;
 }
 
 const layeredGradients = [
@@ -18,7 +19,7 @@ const orbitAnimations = [
   { duration: 38, delay: 8 },
 ];
 
-const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
+const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
 
@@ -231,7 +232,31 @@ const LandingPage = ({ onSelectAuth }: LandingPageProps) => {
         </motion.div>
       </main>
 
-      <footer className="relative z-10 flex flex-col items-center gap-1 pb-10 text-xs uppercase tracking-[0.35em] text-[#a06f00]/70">
+      <footer className="relative z-10 flex flex-col items-center gap-4 pb-10 text-xs uppercase tracking-[0.35em] text-[#a06f00]/70">
+        <div className="flex gap-6">
+          {onNavigate && (
+            <>
+              <button
+                onClick={() => onNavigate("contact")}
+                className="hover:text-amber-600 transition-colors lowercase tracking-normal"
+              >
+                Contact Us
+              </button>
+              <button
+                onClick={() => onNavigate("ratings")}
+                className="hover:text-amber-600 transition-colors lowercase tracking-normal"
+              >
+                Ratings
+              </button>
+              <button
+                onClick={() => onNavigate("reviews")}
+                className="hover:text-amber-600 transition-colors lowercase tracking-normal"
+              >
+                Reviews
+              </button>
+            </>
+          )}
+        </div>
         <span>Powered by the Banana API Network</span>
         <span className="flex items-center gap-2">
           <Sparkles className="h-3 w-3 text-amber-500" /> University of Bahrain eSports Lab <Sparkles className="h-3 w-3 text-amber-500" />

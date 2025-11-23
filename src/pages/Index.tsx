@@ -3,9 +3,12 @@ import LandingPage from "@/components/LandingPage";
 import LoginPage from "@/components/LoginPage";
 import GamePage from "@/components/GamePage";
 import Leaderboard from "@/components/Leaderboard";
+import ContactUs from "@/components/ContactUs";
+import Ratings from "@/components/Ratings";
+import Reviews from "@/components/Reviews";
 import { clearStoredSession } from "@/lib/auth";
 
-type ViewState = "landing" | "auth" | "playing" | "leaderboard";
+type ViewState = "landing" | "auth" | "playing" | "leaderboard" | "contact" | "ratings" | "reviews";
 
 const Index = () => {
   const [view, setView] = useState<ViewState>("landing");
@@ -55,7 +58,7 @@ const Index = () => {
 
   return (
     <>
-      {view === "landing" && <LandingPage onSelectAuth={handleSelectAuth} />}
+      {view === "landing" && <LandingPage onSelectAuth={handleSelectAuth} onNavigate={(view) => setView(view as ViewState)} />}
       {view === "auth" && <LoginPage onLogin={handleLogin} initialTab={authTab} onBack={() => setView("landing")} />}
       {view === "playing" && (
         <GamePage
@@ -72,6 +75,9 @@ const Index = () => {
           onBackToLogin={handleLogout}
         />
       )}
+      {view === "contact" && <ContactUs onBack={() => setView("landing")} />}
+      {view === "ratings" && <Ratings onBack={() => setView("landing")} />}
+      {view === "reviews" && <Reviews onBack={() => setView("landing")} />}
     </>
   );
 };
