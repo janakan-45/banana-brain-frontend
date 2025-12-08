@@ -99,7 +99,6 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
         setUserRating(data.rating);
       }
     } catch (error) {
-      // User might not have a rating yet
     }
   };
 

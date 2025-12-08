@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Download, X, Trophy, Medal, Award, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Dynamic imports for PDF libraries to prevent blocking
+
 let jsPDF: any = null;
 let html2canvas: any = null;
 
@@ -79,7 +79,7 @@ const Certificate = ({ playerName, place, score, onClose }: CertificateProps) =>
 
     setDownloading(true);
     try {
-      // Load libraries if not already loaded
+      
       await loadPDFLibraries();
 
       const canvas = await html2canvas(certificateRef.current, {

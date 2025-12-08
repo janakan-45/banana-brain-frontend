@@ -89,7 +89,7 @@ const Ratings = ({ onBack }: RatingsProps) => {
         setUserRating(data.rating);
       }
     } catch (error) {
-      // User might not have a rating yet, which is fine
+     
       console.log("No user rating found");
     }
   };
@@ -123,7 +123,7 @@ const Ratings = ({ onBack }: RatingsProps) => {
 
       const data = await response.json();
       setUserRating(rating);
-      await fetchRatings(); // Refresh ratings
+      await fetchRatings(); 
 
       toast({
         title: "Success! ⭐",

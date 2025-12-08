@@ -65,7 +65,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   const [showShop, setShowShop] = useState(false);
   const [puzzleStartTime, setPuzzleStartTime] = useState<number>(0);
   const [isTimerFrozen, setIsTimerFrozen] = useState(false);
-  // New game mechanics state
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
   const [xpNeeded, setXpNeeded] = useState(100);
@@ -131,7 +130,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     [apiBaseUrl, isLoggingOut, onLogout, toast],
   );
 
-  // Update player data on backend
+
   const updatePlayerData = useCallback(async (updates: Partial<Record<string, any>>) => {
     try {
       const accessToken = localStorage.getItem('accessToken');
@@ -150,7 +149,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         return;
       }
       if (!response.ok) throw new Error("Failed to update player data");
-      // No need to set state here, as the local state is already updated optimistically
+      
     } catch (error) {
       toast({ title: "Sync Error", description: "Failed to sync player data with the server.", variant: "destructive" });
     }
@@ -160,7 +159,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     setLoading(true);
     setIsTimerFrozen(false);
     setUserAnswer("");
-    setHintsUsedThisPuzzle(0); // Reset hints used for new puzzle
+    setHintsUsedThisPuzzle(0); 
     try {
       const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${apiBaseUrl}/banana/puzzle/`, {
@@ -169,7 +168,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       if (!response.ok) throw new Error("Failed to fetch puzzle");
       const data = await response.json();
       setPuzzle(data);
-      // Set time based on difficulty
+      
       const timeLimits = { easy: 50, medium: 40, hard: 30 };
       setTimeLeft(timeLimits[difficulty]);
       setPuzzleStartTime(Date.now());
@@ -198,7 +197,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       setCoins(data.coins);
       setPowerUps({ hint: data.hints, freeze: data.freezes, superBanana: data.super_bananas });
       setAchievements(prev => prev.map(a => ({ ...a, unlocked: data.achievements.includes(a.id) })));
-      // Update new game mechanics
       if (data.level) setLevel(data.level);
       if (data.xp !== undefined) setXp(data.xp);
       if (data.difficulty) setDifficulty(data.difficulty);
@@ -224,7 +222,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setDifficulty(data.difficulty);
       }
     } catch (error) {
-      // Silently fail
     }
   }, [apiBaseUrl]);
 
@@ -240,7 +237,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setDailyChallenge(data);
       }
     } catch (error) {
-      // Silently fail
     }
   }, [apiBaseUrl]);
 
@@ -332,10 +328,9 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       }
 
       const data = await response.json();
-      
-      // Update local state with remaining hints
+  
       setPowerUps(prev => ({ ...prev, hint: data.hints_remaining }));
-      setHintsUsedThisPuzzle(prev => prev + 1); // Track hints used
+      setHintsUsedThisPuzzle(prev => prev + 1); 
 
       toast({
         title: data.title || "💡 Hint Used!",
@@ -375,7 +370,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       const newSuperBananaCount = powerUps.superBanana - 1;
       setPowerUps(prev => ({ ...prev, superBanana: newSuperBananaCount }));
       updatePlayerData({ super_bananas: newSuperBananaCount });
-      setDoublePointsActive(true); // Activate double points for next solve
+      setDoublePointsActive(true); 
       
       toast({
         title: "🍌✨ Super Banana Activated!",
@@ -410,10 +405,10 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
   const handleSubmit = useCallback(async () => {
     if (!puzzle || !userAnswer) return;
 
-    // Calculate time taken
+  
     const timeTaken = puzzleStartTime > 0 ? Math.floor((Date.now() - puzzleStartTime) / 1000) : 0;
 
-    // ✅ Ask backend to verify the answer
+
     const checkAnswer = async () => {
       try {
         const accessToken = localStorage.getItem('accessToken');
@@ -439,13 +434,12 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
     const result = await checkAnswer();
 
     if (result.correct) {
-      // ✅ Correct Answer - Use backend calculated points
       let points = result.points || 10;
       
-      // Apply double points if Super Banana is active
+
       if (doublePointsActive) {
         points = points * 2;
-        setDoublePointsActive(false); // Deactivate after use
+        setDoublePointsActive(false); 
         toast({
           title: "🎊 Double Points!",
           description: "Super Banana bonus applied!",
@@ -464,13 +458,12 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       setStreak(newStreak);
       setCombo(result.combo || 0);
       
-      // Update XP and level
       if (result.xp_gained) {
         setXp(prev => prev + result.xp_gained);
       }
       if (result.leveled_up && result.new_level) {
         setLevel(result.new_level);
-        setXpNeeded(100); // Reset for new level
+        setXpNeeded(100); 
         toast({
           title: "🎊 Level Up!",
           description: `You reached level ${result.new_level}!`,
@@ -481,7 +474,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
       
       updatePlayerData({ coins: newCoins });
 
-      // Build description with breakdown
       let description = `+${points} points & ${earnedCoins} coins!`;
       if (result.breakdown) {
         description += `\nBase: ${result.breakdown.base_points}`;
@@ -508,10 +500,9 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setShowCelebration(false);
         setParticles([]);
         fetchPuzzle();
-        fetchGameStats(); // Refresh stats
+        fetchGameStats(); 
       }, 2000);
     } else {
-      // ❌ Incorrect Answer — show correct one from backend
       setStreak(0);
       setCombo(0);
       setShowFailure(true);
@@ -527,7 +518,7 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
         setShowFailure(false);
         setFailureParticles([]);
         fetchPuzzle();
-        fetchGameStats(); // Refresh stats
+        fetchGameStats(); 
       }, 2000);
     }
   }, [
@@ -596,7 +587,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
 };
 
 
-  // ... rest of the JSX remains the same
   return (
     <div className="min-h-screen p-4 py-8 relative overflow-x-hidden">
 
@@ -757,7 +747,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
                   body: JSON.stringify({ difficulty: value }),
                 });
               } catch (error) {
-                // Silently fail
               }
             }}>
               <SelectTrigger className="w-32">
@@ -859,7 +848,6 @@ const GamePage = ({ username, onLogout, onGameComplete }: GamePageProps) => {
                         fetchDailyChallenge();
                       }
                     } catch (error) {
-                      // Silently fail
                     }
                   }}
                   className="bg-gradient-to-r from-amber-400 to-amber-600 text-white"

@@ -2,13 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
 
 @layer base {
   :root {
-    /* Banana Game Theme - Vibrant & Playful */
+    
     --background: 250 100% 97%;
     --foreground: 270 50% 15%;
 
@@ -18,23 +15,20 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 270 50% 15%;
 
-    /* Banana Yellow Primary */
     --primary: 48 100% 50%;
     --primary-foreground: 270 50% 15%;
     --primary-glow: 45 100% 60%;
 
-    /* Purple Secondary */
+
     --secondary: 270 60% 50%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 250 30% 90%;
     --muted-foreground: 270 20% 40%;
 
-    /* Success Green */
     --accent: 142 76% 45%;
     --accent-foreground: 0 0% 100%;
 
-    /* Error Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
@@ -44,18 +38,15 @@ All colors MUST be HSL.
 
     --radius: 1rem;
 
-    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(45 100% 55%), hsl(55 100% 50%));
     --gradient-secondary: linear-gradient(135deg, hsl(270 60% 50%), hsl(280 70% 60%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 45%), hsl(152 76% 50%));
     --gradient-bg: linear-gradient(180deg, hsl(250 100% 97%), hsl(260 100% 98%));
 
-    /* Shadows & Effects */
     --shadow-glow: 0 0 40px hsl(48 100% 50% / 0.3);
     --shadow-card: 0 10px 30px -10px hsl(270 50% 15% / 0.15);
     --shadow-hover: 0 20px 40px -15px hsl(270 50% 15% / 0.25);
 
-    /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
@@ -105,24 +96,22 @@ All colors MUST be HSL.
     @apply bg-gradient-to-br from-background to-muted text-foreground min-h-screen;
   }
 
-  /* Hide scrollbar globally */
   * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
   }
 
   *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none; 
   }
 
-  /* Performance optimizations for smooth scrolling */
+ 
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
-  /* GPU acceleration for animated elements */
   [data-framer-component] {
     transform: translateZ(0);
     will-change: transform;
@@ -168,15 +157,14 @@ All colors MUST be HSL.
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Hide scrollbar for Chrome, Safari and Opera */
+ 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
   .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
   }
 }
 
