@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Gamepad2, LogIn, Sparkles, Trophy, UserPlus, Zap } from "lucide-react";
 
 interface LandingPageProps {
@@ -20,54 +20,32 @@ const orbitAnimations = [
 ];
 
 const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-
-  const rotateX = useTransform(pointerY, [-160, 160], [16, -16]);
-  const rotateY = useTransform(pointerX, [-160, 160], [-16, 16]);
-  const glowX = useTransform(pointerX, [-160, 160], ["30%", "70%"]);
-  const glowY = useTransform(pointerY, [-160, 160], ["30%", "70%"]);
-
   const floatingEmojis = useMemo(
-    () => ["🍌", "🥥", "🌴", "🎮", "🪄", "⚡", "💥", "🛸"].sort(() => 0.5 - Math.random()).slice(0, 6),
+    () => ["🍌", "🥥", "🌴", "🎮", "🪄", "⚡", "💥", "🛸"].sort(() => 0.5 - Math.random()).slice(0, 4),
     [],
   );
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const moveX = event.clientX - (bounds.left + bounds.width / 2);
-    const moveY = event.clientY - (bounds.top + bounds.height / 2);
-    pointerX.set(moveX);
-    pointerY.set(moveY);
-  };
-
-  const resetTilt = () => {
-    pointerX.set(0);
-    pointerY.set(0);
-  };
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-[#fff7d4] via-[#ffe29f] to-[#ffc14f]">
       <div className="absolute inset-0">
         {layeredGradients.map((gradient, index) => (
           <motion.div
             key={`orb-${gradient}`}
-            className={`absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br ${gradient} blur-[120px] opacity-40`}
+            className={`absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br ${gradient} blur-[80px] opacity-40 will-change-transform`}
             animate={{
               scale: [1, 1.08, 1],
-              rotate: [0, 360],
             }}
             transition={{ duration: orbitAnimations[index].duration, repeat: Infinity, ease: "linear", delay: orbitAnimations[index].delay }}
           />
         ))}
         <motion.div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.58)_0%,rgba(255,243,205,0.45)_45%,rgba(255,213,122,0.75)_100%)]"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.58)_0%,rgba(255,243,205,0.45)_45%,rgba(255,213,122,0.75)_100%)] will-change-[opacity]"
           animate={{ opacity: [0.65, 0.85, 0.65] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         {Array.from({ length: 4 }).map((_, index) => (
           <motion.div
             key={`orbit-${index}`}
-            className="absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-[60%] border border-yellow-300/30"
+            className="absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-[60%] border border-yellow-300/30 will-change-transform"
             style={{ rotate: index * 14 }}
             animate={{
               scale: [1 + index * 0.04, 1.05 + index * 0.04, 1 + index * 0.04],
@@ -79,7 +57,7 @@ const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
         {floatingEmojis.map((item, index) => (
           <motion.span
             key={`float-${item}-${index}`}
-            className="pointer-events-none absolute select-none text-3xl drop-shadow-[0_12px_18px_rgba(0,0,0,0.45)]"
+            className="pointer-events-none absolute select-none text-3xl will-change-transform"
             style={{
               left: `${10 + index * 14}%`,
               top: `${18 + ((index + 1) % 4) * 15}%`,
@@ -127,16 +105,9 @@ const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <motion.div
-            className="relative flex flex-col justify-start gap-8 rounded-[40px] border border-yellow-200/70 bg-white/70 p-10 shadow-[0_40px_120px_-60px_rgba(240,174,0,0.45)] backdrop-blur-[22px]"
-            onPointerMove={handlePointerMove}
-            onPointerLeave={resetTilt}
-            style={{ transformStyle: "preserve-3d", perspective: 1600 }}
+            className="relative flex flex-col justify-start gap-8 rounded-[40px] border border-yellow-200/70 bg-white/70 p-10 shadow-[0_40px_120px_-60px_rgba(240,174,0,0.45)] backdrop-blur-md"
           >
-            <motion.div
-              className="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-200/50 blur-[120px]"
-              style={{ left: glowX, top: glowY }}
-            />
-            <motion.div style={{ rotateX, rotateY, transformStyle: "preserve-3d" }} className="space-y-8">
+            <motion.div className="space-y-8">
               <motion.div className="w-fit rounded-full border border-yellow-300/60 bg-yellow-200/60 px-5 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-[#704600] shadow-inner">
                 Official UoB Puzzle Arena
               </motion.div>
@@ -171,7 +142,7 @@ const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
           </motion.div>
 
           <motion.div
-            className="relative flex flex-col justify-start gap-8 rounded-[36px] border border-yellow-200/60 bg-gradient-to-br from-yellow-200/70 via-white/70 to-white/80 p-10 shadow-[0_50px_140px_-70px_rgba(240,174,0,0.45)] backdrop-blur-[26px]"
+            className="relative flex flex-col justify-start gap-8 rounded-[36px] border border-yellow-200/60 bg-gradient-to-br from-yellow-200/70 via-white/70 to-white/80 p-10 shadow-[0_50px_140px_-70px_rgba(240,174,0,0.45)] backdrop-blur-md"
             initial={{ opacity: 0, x: 32 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
