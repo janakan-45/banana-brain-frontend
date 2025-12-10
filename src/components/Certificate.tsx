@@ -79,7 +79,7 @@ const Certificate = ({ playerName, place, score, onClose }: CertificateProps) =>
 
     setDownloading(true);
     try {
-      
+
       await loadPDFLibraries();
 
       const canvas = await html2canvas(certificateRef.current, {
@@ -169,7 +169,7 @@ const Certificate = ({ playerName, place, score, onClose }: CertificateProps) =>
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
-      <Card className="w-full max-w-4xl bg-white p-3 sm:p-6 relative my-4">
+      <Card className="w-full max-w-xl bg-white p-2 sm:p-4 relative my-2 max-h-[90vh] overflow-y-auto">
         <Button
           variant="ghost"
           size="icon"
@@ -179,89 +179,89 @@ const Certificate = ({ playerName, place, score, onClose }: CertificateProps) =>
           <X className="w-5 h-5" />
         </Button>
 
-        <div ref={certificateRef} className="bg-white p-4 sm:p-8 lg:p-12">
+        <div ref={certificateRef} className="bg-white p-2 sm:p-4">
           {/* Certificate Design */}
           <div
-            className={`border-4 sm:border-6 lg:border-8 ${placeDetails.borderColor} rounded-2xl sm:rounded-3xl bg-gradient-to-br ${placeDetails.gradient} p-4 sm:p-8 lg:p-12 shadow-2xl relative overflow-hidden`}
+            className={`border-2 sm:border-4 ${placeDetails.borderColor} rounded-xl sm:rounded-2xl bg-gradient-to-br ${placeDetails.gradient} p-2 sm:p-4 lg:p-6 shadow-xl relative overflow-hidden`}
           >
             {/* Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-              <div className="absolute text-4xl sm:text-6xl lg:text-9xl top-2 left-2 sm:top-4 sm:left-4 lg:top-10 lg:left-10 rotate-12">🍌</div>
-              <div className="absolute text-4xl sm:text-6xl lg:text-9xl top-2 right-2 sm:top-4 sm:right-4 lg:top-10 lg:right-10 -rotate-12">🍌</div>
-              <div className="absolute text-4xl sm:text-6xl lg:text-9xl bottom-2 left-4 sm:bottom-4 sm:left-8 lg:bottom-10 lg:left-20 rotate-12">🍌</div>
-              <div className="absolute text-4xl sm:text-6xl lg:text-9xl bottom-2 right-4 sm:bottom-4 sm:right-8 lg:bottom-10 lg:right-20 -rotate-12">🍌</div>
+              <div className="absolute text-4xl sm:text-5xl lg:text-7xl top-2 left-2 sm:top-4 sm:left-4 lg:top-8 lg:left-8 rotate-12">🍌</div>
+              <div className="absolute text-4xl sm:text-5xl lg:text-7xl top-2 right-2 sm:top-4 sm:right-4 lg:top-8 lg:right-8 -rotate-12">🍌</div>
+              <div className="absolute text-4xl sm:text-5xl lg:text-7xl bottom-2 left-4 sm:bottom-4 sm:left-8 lg:bottom-8 lg:left-16 rotate-12">🍌</div>
+              <div className="absolute text-4xl sm:text-5xl lg:text-7xl bottom-2 right-4 sm:bottom-4 sm:right-8 lg:bottom-8 lg:right-16 -rotate-12">🍌</div>
             </div>
 
             {/* Certificate Content */}
             <div className="relative z-10 text-center px-2 sm:px-4">
               {/* Header */}
-              <div className="mb-4 sm:mb-6 lg:mb-8">
-                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 sm:mb-4 drop-shadow-2xl leading-tight">
+              <div className="mb-2 sm:mb-3 lg:mb-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white mb-1 sm:mb-2 drop-shadow-2xl leading-tight">
                   CERTIFICATE OF ACHIEVEMENT
                 </h1>
-                <div className="w-16 sm:w-24 lg:w-32 h-0.5 sm:h-1 bg-white mx-auto rounded-full"></div>
+                <div className="w-12 sm:w-16 lg:w-20 h-0.5 sm:h-1 bg-white mx-auto rounded-full"></div>
               </div>
 
               {/* Icon */}
-              <div className="flex justify-center mb-3 sm:mb-4 lg:mb-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20">
+              <div className="flex justify-center mb-2 sm:mb-3 lg:mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14">
                   {placeDetails.icon}
                 </div>
               </div>
 
               {/* Title */}
-              <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 lg:mb-4 drop-shadow-xl leading-tight px-2">
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white mb-1 sm:mb-2 drop-shadow-xl leading-tight px-2">
                 {placeDetails.title}
               </h2>
 
               {/* Subtitle */}
-              <p className="text-base sm:text-xl lg:text-2xl text-white/90 mb-4 sm:mb-6 lg:mb-8 font-semibold px-2">
+              <p className="text-xs sm:text-sm lg:text-base text-white/90 mb-2 sm:mb-4 lg:mb-5 font-semibold px-2">
                 {placeDetails.subtitle}
               </p>
 
               {/* Player Name */}
-              <div className="mb-4 sm:mb-6 lg:mb-8">
-                <p className="text-sm sm:text-lg lg:text-xl text-white/80 mb-2">This is to certify that</p>
-                <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-white/50 max-w-full mx-2">
-                  <p className="text-xl sm:text-3xl lg:text-4xl font-black text-white drop-shadow-lg break-words">
+              <div className="mb-2 sm:mb-4 lg:mb-5">
+                <p className="text-[10px] sm:text-xs lg:text-sm text-white/80 mb-1">This is to certify that</p>
+                <div className="inline-block bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl border-2 sm:border-2 border-white/50 max-w-full mx-2">
+                  <p className="text-base sm:text-xl lg:text-2xl font-black text-white drop-shadow-lg break-words">
                     {playerName}
                   </p>
                 </div>
               </div>
 
               {/* Achievement Details */}
-              <div className="mb-4 sm:mb-6 lg:mb-8 space-y-2 sm:space-y-3">
-                <p className="text-base sm:text-xl lg:text-2xl text-white font-bold px-2 leading-tight">
+              <div className="mb-2 sm:mb-4 lg:mb-5 space-y-1 sm:space-y-2">
+                <p className="text-xs sm:text-base lg:text-lg text-white font-bold px-2 leading-tight">
                   Has achieved {placeDetails.medal} {place === 1 ? "1st" : place === 2 ? "2nd" : "3rd"} Place
                 </p>
-                <p className="text-sm sm:text-lg lg:text-xl text-white/90 px-2">
+                <p className="text-[10px] sm:text-sm lg:text-base text-white/90 px-2">
                   in the Banana Brain Blitz Game
                 </p>
-                <div className="flex items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-6">
-                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl border-2 border-white/50">
-                    <p className="text-xs sm:text-sm text-white/80 mb-1">Final Score</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white">{score} 🍌</p>
+                <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 sm:mt-4">
+                  <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-white/50">
+                    <p className="text-[9px] sm:text-[10px] text-white/80 mb-0.5">Final Score</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-black text-white">{score} 🍌</p>
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="mt-6 sm:mt-8 lg:mt-12 pt-4 sm:pt-6 lg:pt-8 border-t-2 sm:border-t-4 border-white/30">
-                <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 sm:gap-0">
+              <div className="mt-3 sm:mt-5 lg:mt-6 pt-2 sm:pt-3 lg:pt-5 border-t border-white/30">
+                <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 sm:gap-0">
                   <div className="text-center flex-1 order-2 sm:order-1">
-                    <div className="w-16 sm:w-24 lg:w-32 h-0.5 sm:h-1 bg-white mx-auto mb-2"></div>
-                    <p className="text-xs sm:text-sm lg:text-base text-white/80 font-semibold">Game Administrator</p>
+                    <div className="w-10 sm:w-14 lg:w-16 h-0.5 bg-white mx-auto mb-1"></div>
+                    <p className="text-[9px] sm:text-[10px] lg:text-xs text-white/80 font-semibold">Game Administrator</p>
                   </div>
-                  <div className="text-3xl sm:text-4xl lg:text-6xl order-1 sm:order-2 mx-0 sm:mx-4 lg:mx-8">{placeDetails.medal}</div>
+                  <div className="text-xl sm:text-2xl lg:text-4xl order-1 sm:order-2 mx-0 sm:mx-4 lg:mx-8">{placeDetails.medal}</div>
                   <div className="text-center flex-1 order-3">
-                    <div className="w-16 sm:w-24 lg:w-32 h-0.5 sm:h-1 bg-white mx-auto mb-2"></div>
-                    <p className="text-xs sm:text-sm lg:text-base text-white/80 font-semibold">Date: {new Date().toLocaleDateString()}</p>
+                    <div className="w-10 sm:w-14 lg:w-16 h-0.5 bg-white mx-auto mb-1"></div>
+                    <p className="text-[9px] sm:text-[10px] lg:text-xs text-white/80 font-semibold">Date: {new Date().toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* Decorative Bottom */}
-              <div className="mt-4 sm:mt-6 lg:mt-8 flex justify-center gap-2 sm:gap-3 lg:gap-4 text-2xl sm:text-3xl lg:text-4xl">
+              <div className="mt-3 sm:mt-5 lg:mt-6 flex justify-center gap-2 sm:gap-3 lg:gap-4 text-xl sm:text-2xl lg:text-3xl">
                 <span>🍌</span>
                 <span>✨</span>
                 <span>🏆</span>
