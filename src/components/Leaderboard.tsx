@@ -150,7 +150,7 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
   const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     const accessToken = localStorage.getItem("accessToken");
-    
+
     if (!accessToken) {
       toast({
         title: "Login Required",
@@ -234,9 +234,8 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
               className={interactive ? "transition-transform hover:scale-110" : ""}
             >
               <Star
-                className={`${sizeClasses[size]} ${
-                  isFilled ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                } transition-colors`}
+                className={`${sizeClasses[size]} ${isFilled ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                  } transition-colors`}
               />
             </button>
           );
@@ -265,9 +264,8 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
               className={interactive ? "transition-transform hover:scale-110" : ""}
             >
               <Star
-                className={`w-5 h-5 ${
-                  isFilled ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                } transition-colors`}
+                className={`w-5 h-5 ${isFilled ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                  } transition-colors`}
               />
             </button>
           );
@@ -315,7 +313,7 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
         {/* Decorative banana bunches */}
         <div className="absolute -top-8 -left-8 text-6xl transform -rotate-12">🍌🍌</div>
         <div className="absolute -top-8 -right-8 text-6xl transform rotate-12">🍌🍌</div>
-        
+
         <div className="text-center mb-8">
           <div className="text-7xl mb-4 animate-bounce">{getRankEmoji()}</div>
           <h1 className="text-5xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-yellow-600 to-amber-600">
@@ -325,7 +323,7 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
             Way to go, <span className="font-bold text-yellow-600">{username}</span>! 🎉
           </p>
           <div className="inline-block bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-8 py-4 rounded-full text-3xl font-bold shadow-lg mb-2 border-2 border-yellow-300">
-            🍌 {currentScore} Points
+            🍌 {userEntry ? userEntry.score : currentScore} Points
           </div>
           {userRank > 0 && (
             <p className="text-lg text-gray-600 font-semibold">
@@ -361,17 +359,16 @@ const Leaderboard = ({ currentScore, username, onPlayAgain, onBackToLogin }: Lea
               leaderboard.map((entry, index) => (
                 <div
                   key={index}
-                  className={`flex items-center justify-between p-4 rounded-xl transition-all ${
-                    entry.username === username
+                  className={`flex items-center justify-between p-4 rounded-xl transition-all ${entry.username === username
                       ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-xl scale-105 border-2 border-yellow-300"
                       : index === 0
-                      ? "bg-gradient-to-r from-yellow-200 to-amber-200 hover:shadow-lg border-2 border-yellow-300"
-                      : index === 1
-                      ? "bg-gradient-to-r from-gray-100 to-gray-200 hover:shadow-lg border-2 border-gray-300"
-                      : index === 2
-                      ? "bg-gradient-to-r from-orange-100 to-amber-100 hover:shadow-lg border-2 border-orange-300"
-                      : "bg-yellow-50 hover:bg-yellow-100 border-2 border-yellow-200 hover:shadow-md"
-                  }`}
+                        ? "bg-gradient-to-r from-yellow-200 to-amber-200 hover:shadow-lg border-2 border-yellow-300"
+                        : index === 1
+                          ? "bg-gradient-to-r from-gray-100 to-gray-200 hover:shadow-lg border-2 border-gray-300"
+                          : index === 2
+                            ? "bg-gradient-to-r from-orange-100 to-amber-100 hover:shadow-lg border-2 border-orange-300"
+                            : "bg-yellow-50 hover:bg-yellow-100 border-2 border-yellow-200 hover:shadow-md"
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     {getRankIcon(index)}
