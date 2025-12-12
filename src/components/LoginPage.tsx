@@ -672,7 +672,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                 </Badge>
                 <h2 className="text-4xl font-extrabold leading-tight drop-shadow-sm sm:text-5xl">Unlock your banana superpowers</h2>
                 <p className="mt-4 max-w-md text-base text-white/80">
-                  Build your reflexes, sync your progress, and climb the leaderboard in a whimsical arcade sprint built for the University of Bahrain.
+                  Build your reflexes, sync your progress, and climb the leaderboard in a whimsical arcade sprint built for the University of Bedfordshire.
                 </p>
                 <div className="mt-10 grid gap-6">
                   {featureHighlights.map(({ icon: Icon, title, description, gradient: itemGradient }) => (
@@ -761,7 +761,7 @@ const LoginPage = ({ onLogin, initialTab = "login", onBack }: LoginPageProps) =>
                   </motion.div>
                   <h1 className="mt-4 text-3xl font-black text-gray-900 sm:text-4xl">Banana Brain Puzzle Hub</h1>
                   <p className="mt-2 text-sm text-gray-600">
-                    Sync your account to submit solutions from the official University of Bahrain Banana API feed.
+                    Sync your account to submit solutions from the official University of Bedfordshire Banana API feed.
                   </p>
                 </div>
                 <Tabs

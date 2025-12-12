@@ -115,7 +115,7 @@ const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
                 Solve the Banana Brain Challenge in Real Time
               </h1>
               <p className="max-w-xl text-base text-[#6b4c00]/80 sm:text-lg">
-                Each round streams a fresh logic puzzle from the official University of Bahrain Banana API. Decode the answer,
+                Each round streams a fresh logic puzzle from the official University of Bedfordshire Banana API. Decode the answer,
                 chain your combos, and climb the global scoreboard with your squad.
               </p>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -230,7 +230,7 @@ const LandingPage = ({ onSelectAuth, onNavigate }: LandingPageProps) => {
         </div>
         <span>Powered by the Banana API Network</span>
         <span className="flex items-center gap-2">
-          <Sparkles className="h-3 w-3 text-amber-500" /> University of Bahrain eSports Lab <Sparkles className="h-3 w-3 text-amber-500" />
+          <Sparkles className="h-3 w-3 text-amber-500" /> University of Bedfordshire eSports Lab <Sparkles className="h-3 w-3 text-amber-500" />
         </span>
       </footer>
     </div>
